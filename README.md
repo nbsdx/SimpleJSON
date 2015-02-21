@@ -39,7 +39,7 @@ int main() {
   obj["new"]["some"]["deep"]["key"] = "Value";
   obj["array2"].append( false, "three" );
   
-  std::cout << obj.ToString() << std::endl;
+  std::cout << obj << std::endl;
 }
 ```
 Output:
