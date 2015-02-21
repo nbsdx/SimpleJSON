@@ -28,6 +28,4 @@
 *.app
 
 # build.sh result
-#*json_example
-#*array_example
 */bin

@@ -2,7 +2,7 @@
 #include "json.hpp"
 #include <iostream>
 
-using namespace json;
+using json::JSON;
 using namespace std;
 
 int main()

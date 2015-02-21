@@ -2,7 +2,7 @@
 Simple C++ JSON library
 
 ## About
-SimpleJSON is a lightweight JSON library for exporting data in JSON format from C++. It makes heavy use of templates to make it as easy as possible for the user to make chages and generate JSON objects. SimpleJSON is packaged as a single C++ Header file "json.hpp". 
+SimpleJSON is a lightweight JSON library for exporting data in JSON format from C++. By taking advantage of templates and operator overloading on the backend, you're able to create and work with JSON objects right away, just as you would expect from a language such as JavaScript. SimpleJSON is packaged as a single C++ Header file "json.hpp". 
 
 ## Upcoming Features
 SimpleJSON is still missing some features, which I hope to get done soon!
@@ -29,9 +29,9 @@ More examples can be found in the 'examples' directory. They're the closest thin
 int main() {
   json::JSON obj;
   // Create a new Array as a field of an Object.
-  obj["array"] = JSONArray( true, "Two", 3, 4.0 );
+  obj["array"] = json::Array( true, "Two", 3, 4.0 );
   // Create a new Object as a field of another Object.
-  obj["obj"] = JSONObject();
+  obj["obj"] = json::Object();
   // Assign to one of the inner object's fields
   obj["obj"]["inner"] = "Inside";
   
@@ -58,4 +58,31 @@ Output:
     "inner" : "Inside"
   }
 }
-```  
+```
+
+This example can also be written another way:
+```cpp
+#include "json.hpp"
+#include <iostream>
+
+using json::JSON;
+
+int main() {
+    JSON obj = {
+        "array", json::Array( true, "Two", 3, 4.0 ),
+        "obj", {
+            "inner", "Inside"
+        },
+        "new", { 
+            "some", { 
+                "deep", { 
+                    "key", "Value" 
+                } 
+            } 
+        },
+        "array2", json::Array( false, "three" )
+    };
+
+    std::cout << obj << std::endl;
+```
+Sadly, we don't have access to the : character in C++, so we can't use that to seperate key-value pairs, but by using commas, we can achieve a very similar effect. The other point you might notice, is that we have to explictly create arrays. This is a limitation of C++'s operator overloading rules, so we can't use the [] operator to define the array :( I'm looking into ways to make this smoother.

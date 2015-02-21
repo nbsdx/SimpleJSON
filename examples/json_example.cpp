@@ -2,7 +2,7 @@
 #include "json.hpp"
 #include <iostream>
 
-using namespace json;
+using json::JSON;
 using namespace std;
 
 int main()
@@ -15,8 +15,8 @@ int main()
     JSON Str2( string( "C++String" ) );
     JSON Int( 1 );
     JSON Float( 1.2 );
-    JSON Arr = JSONArray();
-    JSON Obj = JSONObject();
+    JSON Arr = json::Array();
+    JSON Obj = json::Object();
 
     // Types can be overwritten by assigning
     // to the object again.
@@ -42,7 +42,7 @@ int main()
     // Arrays can be intialized with any elements and
     // they are turned into JSON objects. Variadic 
     // Templates are pretty cool.
-    JSON Arr2 = JSONArray( 2, "Test", true );
+    JSON Arr2 = json::Array( 2, "Test", true );
 
     // Objects are accessed using operator[]( string ).
     // Will create new pairs on the fly, just as std::map
@@ -50,7 +50,7 @@ int main()
     Obj["Key1"] = 1.0;
     Obj["Key2"] = "Value";
 
-    JSON Obj2 = JSONObject();
+    JSON Obj2 = json::Object();
     Obj2["Key3"] = 1;
     Obj2["Key4"] = Arr;
     Obj2["Key5"] = Arr2;
@@ -60,4 +60,19 @@ int main()
 
     // Dump Obj to a string.
     cout << Obj << endl;
+
+    // We can also use a more JSON-like syntax to create 
+    // JSON Objects.
+    JSON Obj3 = {
+        "Key1", "Value",
+        "Key2", true,
+        "Key3", {
+            "Key4", json::Array( "This", "Is", "An", "Array" ),
+            "Key5", {
+                "BooleanValue", true
+            }
+        }
+    };
+
+    cout << Obj3 << endl;
 }

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <ios>
 
-using namespace json;
+using json::JSON;
 using namespace std;
 
 int main()

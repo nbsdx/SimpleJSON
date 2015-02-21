@@ -1,10 +1,12 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <map>
 #include <type_traits>
+#include <initializer_list>
 #include <ostream>
 
 namespace json {
@@ -13,6 +15,7 @@ using std::map;
 using std::vector;
 using std::string;
 using std::enable_if;
+using std::initializer_list;
 using std::is_same;
 using std::is_convertible;
 using std::is_integral;
@@ -36,7 +39,7 @@ class JSON
     } Internal;
 
     public:
-        enum Class {
+        enum class Class {
             Null,
             Object,
             Array,
@@ -46,76 +49,102 @@ class JSON
             Boolean
         };
 
-        JSON() : Type( Null ){}
+        JSON() : Internal(), Type( Class::Null ){}
 
-        JSON( JSON&& other ) : 
-            Internal( other.Internal ),
-            Type( other.Type )
-        { other.Type = Null; other.Internal.Map = nullptr; }
+        JSON( initializer_list<JSON> list ) 
+            : JSON() 
+        {
+            SetType( Class::Object );
+            for( auto i = list.begin(), e = list.end(); i != e; ++i, ++i )
+                operator[]( i->ToString() ) = *std::next( i );
+        }
+
+        JSON( JSON&& other )
+            : Internal( other.Internal )
+            , Type( other.Type )
+        { other.Type = Class::Null; other.Internal.Map = nullptr; }
 
         JSON& operator=( JSON&& other ) {
             Internal = other.Internal;
             Type = other.Type;
             other.Internal.Map = nullptr;
-            other.Type = Null;
+            other.Type = Class::Null;
             return *this;
         }
 
         JSON( const JSON &other ) {
-            if( other.Type == Object )
+            switch( other.Type ) {
+            case Class::Object:
                 Internal.Map = 
                     new map<string,JSON>( other.Internal.Map->begin(),
                                           other.Internal.Map->end() );
-            else if( other.Type == Array )
+                break;
+            case Class::Array:
                 Internal.List = 
                     new vector<JSON>( other.Internal.List->begin(),
                                       other.Internal.List->end() );
-            else if( other.Type == String )
+                break;
+            case Class::String:
                 Internal.String = 
                     new string( *other.Internal.String );
-            else
+                break;
+            default:
                 Internal = other.Internal;
+            }
             Type = other.Type;
         }
 
         JSON& operator=( const JSON &other ) {
-            if( other.Type == Object )
+            switch( other.Type ) {
+            case Class::Object:
                 Internal.Map = 
                     new map<string,JSON>( other.Internal.Map->begin(),
                                           other.Internal.Map->end() );
-            else if( other.Type == Array )
+                break;
+            case Class::Array:
                 Internal.List = 
                     new vector<JSON>( other.Internal.List->begin(),
                                       other.Internal.List->end() );
-            else if( other.Type == String )
+                break;
+            case Class::String:
                 Internal.String = 
                     new string( *other.Internal.String );
-            else
+                break;
+            default:
                 Internal = other.Internal;
+            }
             Type = other.Type;
             return *this;
         }
 
         ~JSON() {
-            if( Type == Array )
+            switch( Type ) {
+            case Class::Array:
                 delete Internal.List;
-            else if( Type == Object )
+                break;
+            case Class::Object:
                 delete Internal.Map;
-            else if( Type == String )
+                break;
+            case Class::String:
                 delete Internal.String;
+                break;
+            default:;
+            }
         }
 
         template <typename T>
-        JSON( T b, typename enable_if<is_same<T,bool>::value>::type* = 0 ) : Internal( b ), Type( Boolean ){};
+        JSON( T b, typename enable_if<is_same<T,bool>::value>::type* = 0 ) : Internal( b ), Type( Class::Boolean ){};
 
         template <typename T>
-        JSON( T i, typename enable_if<is_integral<T>::value && !is_same<T,bool>::value>::type* = 0 ) : Internal( (long)i ), Type( Integral ){}
+        JSON( T i, typename enable_if<is_integral<T>::value && !is_same<T,bool>::value>::type* = 0 ) : Internal( (long)i ), Type( Class::Integral ){}
 
         template <typename T>
-        JSON( T f, typename enable_if<is_floating_point<T>::value>::type* = 0 ) : Internal( (double)f ), Type( Floating ){}
+        JSON( T f, typename enable_if<is_floating_point<T>::value>::type* = 0 ) : Internal( (double)f ), Type( Class::Floating ){}
 
         template <typename T>
-        JSON( T s, typename enable_if<is_convertible<T,string>::value>::type* = 0 ) : Internal( string( s ) ), Type( String ){}
+        JSON( T s, typename enable_if<is_convertible<T,string>::value>::type* = 0 ) : Internal( string( s ) ), Type( Class::String ){}
+
+        JSON( std::nullptr_t ) : Internal(), Type( Class::Null ){}
 
         static JSON Make( Class type ) {
             JSON ret; ret.SetType( type );
@@ -124,7 +153,7 @@ class JSON
 
         template <typename T>
         void append( T arg ) {
-            SetType( Array ); Internal.List->emplace_back( arg );
+            SetType( Class::Array ); Internal.List->emplace_back( arg );
         }
 
         template <typename T, typename... U>
@@ -134,30 +163,30 @@ class JSON
 
         template <typename T>
             typename enable_if<is_same<T,bool>::value, JSON&>::type operator=( T b ) {
-                SetType( Boolean ); Internal.Bool = b; return *this;
+                SetType( Class::Boolean ); Internal.Bool = b; return *this;
             }
 
         template <typename T>
             typename enable_if<is_integral<T>::value && !is_same<T,bool>::value, JSON&>::type operator=( T i ) {
-                SetType( Integral ); Internal.Int = i; return *this;
+                SetType( Class::Integral ); Internal.Int = i; return *this;
             }
 
         template <typename T>
             typename enable_if<is_floating_point<T>::value, JSON&>::type operator=( T f ) {
-                SetType( Floating ); Internal.Float = f; return *this;
+                SetType( Class::Floating ); Internal.Float = f; return *this;
             }
 
         template <typename T>
             typename enable_if<is_convertible<T,string>::value, JSON&>::type operator=( T s ) {
-                SetType( String ); *Internal.String = string( s ); return *this;
+                SetType( Class::String ); *Internal.String = string( s ); return *this;
             }
 
         JSON& operator[]( const string &key ) {
-            SetType( Object ); return Internal.Map->operator[]( key );
+            SetType( Class::Object ); return Internal.Map->operator[]( key );
         }
 
         JSON& operator[]( unsigned index ) {
-            SetType( Array );
+            SetType( Class::Array );
             if( index >= Internal.List->size() ) Internal.List->resize( index + 1 );
             return Internal.List->operator[]( index );
         }
@@ -165,29 +194,29 @@ class JSON
         Class JSONType() { return Type; }
 
         /// Functions for getting primitives from the JSON object.
-        bool IsNull(){ return Type == Null; }
+        bool IsNull(){ return Type == Class::Null; }
 
-        string ToString(){ bool b; return std::move( ToString( b ) ); }
-        string ToString( bool &ok ) {
-            ok = (Type == String);
+        string ToString() const { bool b; return std::move( ToString( b ) ); }
+        string ToString( bool &ok ) const {
+            ok = (Type == Class::String);
             return ok ? *Internal.String : string("");
         }
 
-        double ToFloat(){ bool b; return ToFloat( b ); }
-        double ToFloat( bool &ok ) {
-            ok = (Type == Floating);
+        double ToFloat() const { bool b; return ToFloat( b ); }
+        double ToFloat( bool &ok ) const {
+            ok = (Type == Class::Floating);
             return ok ? Internal.Float : 0.0;
         }
 
-        long ToInt(){ bool b; return ToInt( b ); }
-        long ToInt( bool &ok ) {
-            ok = (Type == Integral);
+        long ToInt() const { bool b; return ToInt( b ); }
+        long ToInt( bool &ok ) const {
+            ok = (Type == Class::Integral);
             return ok ? Internal.Int : 0;
         }
 
-        bool ToBool(){ bool b; return ToBool( b ); }
-        bool ToBool( bool &ok ) {
-            ok = (Type == Boolean);
+        bool ToBool() const { bool b; return ToBool( b ); }
+        bool ToBool( bool &ok ) const {
+            ok = (Type == Class::Boolean);
             return ok ? Internal.Bool : false;
         }
 
@@ -196,9 +225,9 @@ class JSON
             for( int i = 0; i < depth; ++i, pad += tab );
 
             switch( Type ) {
-                case Null:
+                case Class::Null:
                     return "null";
-                case Object: {
+                case Class::Object: {
                     string s = "{\n";
                     bool skip = true;
                     for( auto &p : *Internal.Map ) {
@@ -209,7 +238,7 @@ class JSON
                     s += ( "\n" + pad.erase( 0, 2 ) + "}" ) ;
                     return s;
                 }
-                case Array: {
+                case Class::Array: {
                     string s = "[";
                     bool skip = true;
                     for( auto &p : *Internal.List ) {
@@ -220,13 +249,13 @@ class JSON
                     s += "]";
                     return s;
                 }
-                case String:
+                case Class::String:
                     return "\"" + *Internal.String + "\"";
-                case Floating:
+                case Class::Floating:
                     return std::to_string( Internal.Float );
-                case Integral:
+                case Class::Integral:
                     return std::to_string( Internal.Int );
-                case Boolean:
+                case Class::Boolean:
                     return Internal.Bool ? "true" : "false";
                 default:
                     return "";
@@ -243,34 +272,40 @@ class JSON
 
             /// Clear out any objects that are allocated 
             /// if we're removing an object/array.
-            if( Type == Object )
+            switch( Type ) {
+            case Class::Object:
                 delete Internal.Map;
-            else if( Type == Array )
+                break;
+            case Class::Array:
                 delete Internal.List;
-            else if( Type == String )
+                break;
+            case Class::String:
                 delete Internal.String;
+                break;
+            default:;
+            }
 
             /// Setup union as needed.
             switch( type ) {
-            case Null:
+            case Class::Null:
                 Internal.Map = nullptr;
                 break;
-            case Object:
+            case Class::Object:
                 Internal.Map = new map<string,JSON>();
                 break;
-            case Array:
+            case Class::Array:
                 Internal.List = new vector<JSON>();
                 break;
-            case String:
+            case Class::String:
                 Internal.String = new string();
                 break;
-            case Floating:
+            case Class::Floating:
                 Internal.Float = 0.0;
                 break;
-            case Integral:
+            case Class::Integral:
                 Internal.Int = 0;
                 break;
-            case Boolean:
+            case Class::Boolean:
                 Internal.Bool = false;
                 break;
             }
@@ -280,22 +315,22 @@ class JSON
 
     private:
 
-        Class Type;
+        Class Type = Class::Null;
 };
 
-JSON JSONArray() {
-    return std::move( JSON::Make( JSON::Array ) );
+JSON Array() {
+    return std::move( JSON::Make( JSON::Class::Array ) );
 }
 
 template <typename... T>
-JSON JSONArray( T... args ) {
-    JSON arr = JSON::Make( JSON::Array );
+JSON Array( T... args ) {
+    JSON arr = JSON::Make( JSON::Class::Array );
     arr.append( args... );
     return std::move( arr );
 }
 
-JSON JSONObject() {
-    return std::move( JSON::Make( JSON::Object ) );
+JSON Object() {
+    return std::move( JSON::Make( JSON::Class::Object ) );
 }
 
 std::ostream& operator<<( std::ostream &os, const JSON &json ) {
