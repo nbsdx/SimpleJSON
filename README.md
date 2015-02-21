@@ -9,7 +9,7 @@ SimpleJSON is still missing some features, which I hope to get done soon!
 * Import JSON from a string.
 * Convert from a JSON object to primitive.
 * Allow users to assign to the next available array index to append to the array:
-```
+```cpp
   JSON array;
   array[0] = "Value";
   array[1] = 2;
@@ -23,7 +23,7 @@ If you run into any bugs, please submit a bug!
 ## Example
 A larger example can be see in example.cpp, so feel free to check that out as well. 
 
-```
+```cpp
 #include "json.hpp"
 
 int main() {
