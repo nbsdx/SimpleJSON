@@ -26,3 +26,6 @@
 *.exe
 *.out
 *.app
+
+# build.sh result
+json_example
