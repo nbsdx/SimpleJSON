@@ -27,7 +27,7 @@ More examples can be found in the 'examples' directory. They're the closest thin
 #include "json.hpp"
 
 int main() {
-  JSON obj;
+  json::JSON obj;
   // Create a new Array as a field of an Object.
   obj["array"] = JSONArray( true, "Two", 3, 4.0 );
   // Create a new Object as a field of another Object.
