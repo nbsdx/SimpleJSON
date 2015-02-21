@@ -10,6 +10,8 @@
 
 #include <iostream>
 
+namespace json {
+
 using std::map;
 using std::vector;
 using std::string;
@@ -158,7 +160,9 @@ class JSON
         }
 
         JSON& operator[]( unsigned index ) {
-            SetType( Array ); return Internal.List->operator[]( index );
+            SetType( Array );
+            if( index >= Internal.List->size() ) Internal.List->resize( index + 1 );
+            return Internal.List->operator[]( index );
         }
 
         string ToString( int depth = 1, string tab = "  ") {
@@ -265,3 +269,5 @@ JSON JSONArray( T... args ) {
 JSON JSONObject() {
     return std::move( JSON::Make( JSON::Object ) );
 }
+
+} // End Namespace json

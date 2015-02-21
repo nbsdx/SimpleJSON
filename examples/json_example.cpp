@@ -1,6 +1,8 @@
 
 #include "json.hpp"
 
+using namespace json;
+
 int main()
 {
     // Example of creating each type
