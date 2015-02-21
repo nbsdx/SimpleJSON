@@ -8,13 +8,13 @@ SimpleJSON is a lightweight JSON library for exporting data in JSON format from 
 SimpleJSON is still missing some features, which I hope to get done soon!
 * Import JSON from a string.
 * Convert from a JSON object to primitive.
-* Allow users to assign to the next available array index to append to the array:
+* **DONE** Allow users to assign ~~to the next available~~ **any** array index to append to the array:
 ```cpp
   JSON array;
   array[0] = "Value";
   array[1] = 2;
   array[2] = true;
-  array[4] = 1.1; // ERROR: Element 3 hasn't been assigned to.
+  array[4] = 1.1; // OK: Element 3 will be initialized to null.
 ```
 One of the biggests goals for SimpleJSON is for it to be lightweight, and small. Having complicated logic isn't bad, but it bloats the codebase in most cases. I'd like to keep things small rather than put in big features that take a ton of space.
 
