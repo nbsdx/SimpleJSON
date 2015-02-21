@@ -7,7 +7,7 @@ SimpleJSON is a lightweight JSON library for exporting data in JSON format from 
 ## Upcoming Features
 SimpleJSON is still missing some features, which I hope to get done soon!
 * Import JSON from a string.
-* Convert from a JSON object to primitive.
+* **DONE** Convert from a JSON object to primitive. **Limited to String, Int, Float, and Bool.**
 * **DONE** Allow users to assign ~~to the next available~~ **any** array index to append to the array:
 ```cpp
   JSON array;
