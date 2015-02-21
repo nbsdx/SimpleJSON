@@ -1,7 +1,9 @@
 
 #include "json.hpp"
+#include <iostream>
 
 using namespace json;
+using namespace std;
 
 int main()
 {
@@ -57,5 +59,5 @@ int main()
     Obj["Key6"] = Obj2;
 
     // Dump Obj to a string.
-    std::cout << Obj.ToString() << "\n";
+    cout << Obj << endl;
 }

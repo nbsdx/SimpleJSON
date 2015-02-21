@@ -4,11 +4,8 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <memory>
-#include <utility>
 #include <type_traits>
-
-#include <iostream>
+#include <ostream>
 
 namespace json {
 
@@ -165,7 +162,36 @@ class JSON
             return Internal.List->operator[]( index );
         }
 
-        string ToString( int depth = 1, string tab = "  ") {
+        Class JSONType() { return Type; }
+
+        /// Functions for getting primitives from the JSON object.
+        bool IsNull(){ return Type == Null; }
+
+        string ToString(){ bool b; return std::move( ToString( b ) ); }
+        string ToString( bool &ok ) {
+            ok = (Type == String);
+            return ok ? *Internal.String : string("");
+        }
+
+        double ToFloat(){ bool b; return ToFloat( b ); }
+        double ToFloat( bool &ok ) {
+            ok = (Type == Floating);
+            return ok ? Internal.Float : 0.0;
+        }
+
+        long ToInt(){ bool b; return ToInt( b ); }
+        long ToInt( bool &ok ) {
+            ok = (Type == Integral);
+            return ok ? Internal.Int : 0;
+        }
+
+        bool ToBool(){ bool b; return ToBool( b ); }
+        bool ToBool( bool &ok ) {
+            ok = (Type == Boolean);
+            return ok ? Internal.Bool : false;
+        }
+
+        string dump( int depth = 1, string tab = "  ") const {
             string pad = "";
             for( int i = 0; i < depth; ++i, pad += tab );
 
@@ -177,7 +203,7 @@ class JSON
                     bool skip = true;
                     for( auto &p : *Internal.Map ) {
                         if( !skip ) s += ",\n";
-                        s += ( pad + "\"" + p.first + "\" : " + p.second.ToString( depth + 1, tab ) );
+                        s += ( pad + "\"" + p.first + "\" : " + p.second.dump( depth + 1, tab ) );
                         skip = false;
                     }
                     s += ( "\n" + pad.erase( 0, 2 ) + "}" ) ;
@@ -188,7 +214,7 @@ class JSON
                     bool skip = true;
                     for( auto &p : *Internal.List ) {
                         if( !skip ) s += ", ";
-                        s += p.ToString( depth + 1, tab );
+                        s += p.dump( depth + 1, tab );
                         skip = false;
                     }
                     s += "]";
@@ -207,6 +233,8 @@ class JSON
             }
             return "";
         }
+
+        friend std::ostream& operator<<( std::ostream&, const JSON & );
 
     private:
         void SetType( Class type ) {
@@ -268,6 +296,11 @@ JSON JSONArray( T... args ) {
 
 JSON JSONObject() {
     return std::move( JSON::Make( JSON::Object ) );
+}
+
+std::ostream& operator<<( std::ostream &os, const JSON &json ) {
+    os << json.dump();
+    return os;
 }
 
 } // End Namespace json
