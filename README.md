@@ -21,7 +21,7 @@ One of the biggests goals for SimpleJSON is for it to be lightweight, and small.
 If you run into any bugs, please submit a bug!
 
 ## Example
-A larger example can be see in example.cpp, so feel free to check that out as well. 
+More examples can be found in the 'examples' directory. They're the closest thing to an API doc until I have time to write one.
 
 ```cpp
 #include "json.hpp"
