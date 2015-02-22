@@ -369,7 +369,7 @@ namespace {
     }
 
     JSON parse_object( const string &str, size_t &offset ) {
-        JSON Object;
+        JSON Object = JSON::Make( JSON::Class::Object );
 
         ++offset;
         consume_ws( str, offset );
@@ -405,7 +405,7 @@ namespace {
     }
 
     JSON parse_array( const string &str, size_t &offset ) {
-        JSON Array;
+        JSON Array = JSON::Make( JSON::Class::Array );
         unsigned index = 0;
         
         ++offset;
