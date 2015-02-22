@@ -2,12 +2,14 @@
 #pragma once
 
 #include <cstdint>
+#include <cctype>
 #include <string>
 #include <vector>
 #include <map>
 #include <type_traits>
 #include <initializer_list>
 #include <ostream>
+#include <iostream>
 
 namespace json {
 
@@ -20,6 +22,25 @@ using std::is_same;
 using std::is_convertible;
 using std::is_integral;
 using std::is_floating_point;
+
+namespace {
+    string json_escape( const string &str ) {
+        string output;
+        for( unsigned i = 0; i < str.length(); ++i )
+            switch( str[i] ) {
+                case '\"': output += "\\\""; break;
+                case '\\': output += "\\\\"; break;
+                case '/' : output += "\\/";  break;
+                case '\b': output += "\\b";  break;
+                case '\f': output += "\\f";  break;
+                case '\n': output += "\\n";  break;
+                case '\r': output += "\\r";  break;
+                case '\t': output += "\\t";  break;
+                default  : output += str[i]; break;
+            }
+        return std::move( output );
+    }
+}
 
 class JSON
 {
@@ -151,6 +172,8 @@ class JSON
             return ret;
         }
 
+        static JSON Load( const string & );
+
         template <typename T>
         void append( T arg ) {
             SetType( Class::Array ); Internal.List->emplace_back( arg );
@@ -199,7 +222,7 @@ class JSON
         string ToString() const { bool b; return std::move( ToString( b ) ); }
         string ToString( bool &ok ) const {
             ok = (Type == Class::String);
-            return ok ? *Internal.String : string("");
+            return ok ? std::move( json_escape( *Internal.String ) ): string("");
         }
 
         double ToFloat() const { bool b; return ToFloat( b ); }
@@ -250,7 +273,7 @@ class JSON
                     return s;
                 }
                 case Class::String:
-                    return "\"" + *Internal.String + "\"";
+                    return "\"" + json_escape( *Internal.String ) + "\"";
                 case Class::Floating:
                     return std::to_string( Internal.Float );
                 case Class::Integral:
@@ -336,6 +359,153 @@ JSON Object() {
 std::ostream& operator<<( std::ostream &os, const JSON &json ) {
     os << json.dump();
     return os;
+}
+
+namespace {
+    JSON parse_next( const string &, size_t & );
+
+    void consume_ws( const string &str, size_t &offset ) {
+        while( isspace( str[offset] ) ) ++offset;
+    }
+
+    JSON parse_object( const string &str, size_t &offset ) {
+        JSON Object;
+
+        ++offset;
+        consume_ws( str, offset );
+        if( str[offset] == '}' ) {
+            ++offset; return std::move( Object );
+        }
+
+        while( true ) {
+            JSON Key = parse_next( str, offset );
+            consume_ws( str, offset );
+            if( str[offset] != ':' ) {
+                std::cerr << "Error: Object: Expected colon, found '" << str[offset] << "'\n";
+                break;
+            }
+            consume_ws( str, ++offset );
+            JSON Value = parse_next( str, offset );
+            Object[Key.ToString()] = Value;
+            
+            consume_ws( str, offset );
+            if( str[offset] == ',' ) {
+                ++offset; continue;
+            }
+            else if( str[offset] == '}' ) {
+                ++offset; break;
+            }
+            else {
+                std::cerr << "ERROR: Object: Expected comma, found '" << str[offset] << "'\n";
+                break;
+            }
+        }
+
+        return std::move( Object );
+    }
+
+    JSON parse_array( const string &str, size_t &offset ) {
+        JSON Array;
+        unsigned index = 0;
+        
+        ++offset;
+        consume_ws( str, offset );
+        if( str[offset] == ']' ) {
+            ++offset; return std::move( Array );
+        }
+
+        while( true ) {
+            Array[index++] = parse_next( str, offset );
+            consume_ws( str, offset );
+
+            if( str[offset] == ',' ) {
+                ++offset; continue;
+            }
+            if( str[offset] == ']' ) {
+                ++offset; break;
+            }
+            else {
+                std::cerr << "ERROR: Array: Expected comma, found '" << str[offset] << "'\n";
+                break;
+            }
+        }
+
+        return std::move( Array );
+    }
+
+    JSON parse_string( const string &str, size_t &offset ) {
+        JSON String;
+        string val;
+        for( char c = str[++offset]; c != '\"' ; c = str[++offset] ) {
+            if( c == '\\' )
+                c = str[++offset];
+            val += c;
+        }
+        ++offset;
+        String = val;
+        return std::move( String );
+    }
+
+    JSON parse_number( const string &str, size_t &offset ) {
+        JSON Number;
+        string val;
+        char c;
+        bool isDouble = false;
+        while( true ) {
+            c = str[offset++];
+            if( (c == '-') || (c >= '0' && c <= '9') )
+                val += c;
+            else if( c == '.' ) {
+                val += c; 
+                isDouble = true;
+            }
+            else {
+                --offset;
+                break;
+            }
+        }
+        if( isDouble )
+            Number = std::stod( val );
+        else
+            Number = std::stol( val );
+        return std::move( Number );
+    }
+
+    JSON parse_bool( const string &str, size_t &offset ) {
+        JSON Bool;
+        Bool = (str[offset] == 't');
+        offset += (Bool.ToBool() ? 4 : 5);
+        return std::move( Bool );
+    }
+
+    JSON parse_null( const string &str, size_t &offset ) {
+        JSON Null;
+        offset += 4;
+        return std::move( Null );
+    }
+
+    JSON parse_next( const string &str, size_t &offset ) {
+        char value;
+        consume_ws( str, offset );
+        value = str[offset];
+        switch( value ) {
+            case '[' : return std::move( parse_array( str, offset ) );
+            case '{' : return std::move( parse_object( str, offset ) );
+            case '\"': return std::move( parse_string( str, offset ) );
+            case 't' :
+            case 'f' : return std::move( parse_bool( str, offset ) );
+            case 'n' : return std::move( parse_null( str, offset ) );
+            default  : if( ( value <= '9' && value >= '0' ) || value == '-' )
+                           return std::move( parse_number( str, offset ) );
+        }
+        std::cerr << "Error parsing JSON starting with char '" << value << "'\n";
+        return JSON();
+    }
+}
+
+JSON JSON::Load( const string &str ) {
+    size_t offset = 0;
+    return std::move( parse_next( str, offset ) );
 }
 
 } // End Namespace json
