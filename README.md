@@ -9,7 +9,7 @@ You can find the API [over here](API.md). For now it's just a Markdown file with
 
 ## Upcoming Features
 SimpleJSON is still missing some features, which I hope to get done soon!
-* **DONE** API Documentation. This needs to happen SOON.... **[See here!](#API)**
+* **DONE** API Documentation. This needs to happen SOON.... **[See here!](#api)**
 * **DONE** Import JSON from a string. **json::JSON::Loads( string )**
   * Note: This needs some more testing, I feel like I messed up the strings part. Damn escape characters...
 * **DONE** Convert from a JSON object to primitive. **Limited to String, Int, Float, and Bool.**
