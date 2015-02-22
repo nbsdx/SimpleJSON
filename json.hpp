@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cmath>
 #include <cctype>
 #include <string>
 #include <vector>
@@ -437,9 +438,21 @@ namespace {
         JSON String;
         string val;
         for( char c = str[++offset]; c != '\"' ; c = str[++offset] ) {
-            if( c == '\\' )
-                c = str[++offset];
-            val += c;
+            if( c == '\\' ) {
+                switch( str[ ++offset ] ) {
+                case '\"': val += '\"'; break;
+                case '\\': val += '\\'; break;
+                case '/' : val += '/' ; break;
+                case 'b' : val += '\b'; break;
+                case 'f' : val += '\f'; break;
+                case 'n' : val += '\n'; break;
+                case 'r' : val += '\r'; break;
+                case 't' : val += '\t'; break;
+                default  : val += '\\'; break;
+                }
+            }
+            else
+                val += c;
         }
         ++offset;
         String = val;
@@ -448,9 +461,10 @@ namespace {
 
     JSON parse_number( const string &str, size_t &offset ) {
         JSON Number;
-        string val;
+        string val, exp_str;
         char c;
         bool isDouble = false;
+        long exp = 0;
         while( true ) {
             c = str[offset++];
             if( (c == '-') || (c >= '0' && c <= '9') )
@@ -459,15 +473,31 @@ namespace {
                 val += c; 
                 isDouble = true;
             }
-            else {
-                --offset;
+            else
                 break;
-            }
         }
+        if( c == 'E' || c == 'e' ) {
+            c = str[ offset++ ];
+            if( c == '-' ){ ++offset; exp_str += '-';}
+            while( true ) {
+                c = str[ offset++ ];
+                if( c >= '0' && c <= '9' )
+                    exp_str += c;
+                else
+                    break;
+            }
+            exp = std::stol( exp_str );
+        }
+        --offset;
+        
         if( isDouble )
-            Number = std::stod( val );
-        else
-            Number = std::stol( val );
+            Number = std::stod( val ) * std::pow( 10, exp );
+        else {
+            if( !exp_str.empty() )
+                Number = std::stol( val ) * std::pow( 10, exp );
+            else
+                Number = std::stol( val );
+        }
         return std::move( Number );
     }
 
