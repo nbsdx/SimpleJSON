@@ -4,9 +4,12 @@ Simple C++ JSON library
 ## About
 SimpleJSON is a lightweight JSON library for exporting data in JSON format from C++. By taking advantage of templates and operator overloading on the backend, you're able to create and work with JSON objects right away, just as you would expect from a language such as JavaScript. SimpleJSON is packaged as a single C++ Header file "json.hpp". 
 
+## API
+You can find the API [over here](API.md). For now it's just a Markdown file with C++ syntax highlighting, but it's better than nothing!
+
 ## Upcoming Features
 SimpleJSON is still missing some features, which I hope to get done soon!
-* API Documentation. This needs to happen SOON....
+* **DONE** API Documentation. This needs to happen SOON.... **[See here!](#API)**
 * **DONE** Import JSON from a string. **json::JSON::Loads( string )**
   * Note: This needs some more testing, I feel like I messed up the strings part. Damn escape characters...
 * **DONE** Convert from a JSON object to primitive. **Limited to String, Int, Float, and Bool.**
