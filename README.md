@@ -2,7 +2,10 @@
 Simple C++ JSON library
 
 ## About
-SimpleJSON is a lightweight JSON library for exporting data in JSON format from C++. By taking advantage of templates and operator overloading on the backend, you're able to create and work with JSON objects right away, just as you would expect from a language such as JavaScript. SimpleJSON is packaged as a single C++ Header file "json.hpp". 
+SimpleJSON is a lightweight JSON library for exporting data in JSON format from C++. By taking advantage of templates and operator overloading on the backend, you're able to create and work with JSON objects right away, just as you would expect from a language such as JavaScript. SimpleJSON is a single C++ Header file, "json.hpp". Feel free to download this file on its own, and include it in your project. No other requirements!
+
+#### Platforms
+SimpleJSON should work on any platform; it's only requirement is a C++11 compatible compiler, as it make heavy use of the C++11 move semantics, and variadic templates. The tests are tailored for linux, but could be ported to any platform with python support and a C++11 compiler.
 
 ## API
 You can find the API [over here](API.md). For now it's just a Markdown file with C++ syntax highlighting, but it's better than nothing!
@@ -10,23 +13,13 @@ You can find the API [over here](API.md). For now it's just a Markdown file with
 ## Upcoming Features
 SimpleJSON is still missing some features, which I hope to get done soon!
 * Write more test cases to cover all major components( mostly parsing )
-* **DONE** API Documentation. This needs to happen SOON.... **[See here!](#api)**
-* **DONE** Import JSON from a string. **json::JSON::Loads( string )**
-* **DONE** Convert from a JSON object to primitive. **Limited to String, Int, Float, and Bool.**
-* **DONE** Allow users to assign ~~to the next available~~ **any** array index to append to the array:
-```cpp
-  JSON array;
-  array[0] = "Value";
-  array[1] = 2;
-  array[2] = true;
-  array[4] = 1.1; // OK: Element 3 will be initialized to null.
-```
+
 One of the biggests goals for SimpleJSON is for it to be lightweight, and small. Having complicated logic isn't bad, but it bloats the codebase in most cases. I'd like to keep things small rather than put in big features that take a ton of space.
 
-If you run into any bugs, please submit a bug!
+If you run into any bugs, or see that I'm missing a featuer, please submit an issue through GitHub and I'll respond as soon as I can!
 
 ## Example
-More examples can be found in the 'examples' directory. They're the closest thing to an API doc until I have time to write one.
+More examples can be found in the 'examples' directory. Check out [the API](API.md) for a full list of functions.
 
 ```cpp
 #include "json.hpp"
@@ -43,6 +36,9 @@ int main() {
   // We don't need to specify the type of the JSON object:
   obj["new"]["some"]["deep"]["key"] = "Value";
   obj["array2"].append( false, "three" );
+  
+  // We can also parse a string into a JSON object:
+  obj["parsed"] = JSON::Load( "[ { \"Key\" : \"Value\" }, false ]" );
   
   std::cout << obj << std::endl;
 }
@@ -61,7 +57,10 @@ Output:
   },
   "obj" : {
     "inner" : "Inside"
-  }
+  },
+  "parsed" : [{
+      "Key" : "Value"
+    }, false]
 }
 ```
 
