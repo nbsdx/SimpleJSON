@@ -294,44 +294,21 @@ class JSON
             if( type == Type )
                 return;
 
-            /// Clear out any objects that are allocated 
-            /// if we're removing an object/array.
             switch( Type ) {
-            case Class::Object:
-                delete Internal.Map;
-                break;
-            case Class::Array:
-                delete Internal.List;
-                break;
-            case Class::String:
-                delete Internal.String;
-                break;
+            case Class::Object: delete Internal.Map;    break;
+            case Class::Array:  delete Internal.List;   break;
+            case Class::String: delete Internal.String; break;
             default:;
             }
 
-            /// Setup union as needed.
             switch( type ) {
-            case Class::Null:
-                Internal.Map = nullptr;
-                break;
-            case Class::Object:
-                Internal.Map = new map<string,JSON>();
-                break;
-            case Class::Array:
-                Internal.List = new vector<JSON>();
-                break;
-            case Class::String:
-                Internal.String = new string();
-                break;
-            case Class::Floating:
-                Internal.Float = 0.0;
-                break;
-            case Class::Integral:
-                Internal.Int = 0;
-                break;
-            case Class::Boolean:
-                Internal.Bool = false;
-                break;
+            case Class::Null:      Internal.Map    = nullptr;                break;
+            case Class::Object:    Internal.Map    = new map<string,JSON>(); break;
+            case Class::Array:     Internal.List   = new vector<JSON>();     break;
+            case Class::String:    Internal.String = new string();           break;
+            case Class::Floating:  Internal.Float  = 0.0;                    break;
+            case Class::Integral:  Internal.Int    = 0;                      break;
+            case Class::Boolean:   Internal.Bool   = false;                  break;
             }
 
             Type = type;
@@ -422,12 +399,12 @@ namespace {
             if( str[offset] == ',' ) {
                 ++offset; continue;
             }
-            if( str[offset] == ']' ) {
+            else if( str[offset] == ']' ) {
                 ++offset; break;
             }
             else {
-                std::cerr << "ERROR: Array: Expected comma, found '" << str[offset] << "'\n";
-                break;
+                std::cerr << "ERROR: Array: Expected ',' or ']', found '" << str[offset] << "'\n";
+                return std::move( JSON::Make( JSON::Class::Array ) );
             }
         }
 
@@ -448,6 +425,19 @@ namespace {
                 case 'n' : val += '\n'; break;
                 case 'r' : val += '\r'; break;
                 case 't' : val += '\t'; break;
+                case 'u' : {
+                    val += "\\u" ;
+                    for( unsigned i = 1; i <= 4; ++i ) {
+                        c = str[offset+i];
+                        if( (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') )
+                            val += c;
+                        else {
+                            std::cerr << "ERROR: String: Expected hex character in unicode escape, found '" << c << "'\n";
+                            return std::move( JSON::Make( JSON::Class::String ) );
+                        }
+                    }
+                    offset += 4;
+                } break;
                 default  : val += '\\'; break;
                 }
             }
@@ -483,10 +473,18 @@ namespace {
                 c = str[ offset++ ];
                 if( c >= '0' && c <= '9' )
                     exp_str += c;
+                else if( !isspace( c ) && c != ',' && c != ']' && c != '}' ) {
+                    std::cerr << "ERROR: Number: Expected a number for exponent, found '" << c << "'\n";
+                    return std::move( JSON::Make( JSON::Class::Null ) );
+                }
                 else
                     break;
             }
             exp = std::stol( exp_str );
+        }
+        else if( !isspace( c ) && c != ',' && c != ']' && c != '}' ) {
+            std::cerr << "ERROR: Number: unexpected character '" << c << "'\n";
+            return std::move( JSON::Make( JSON::Class::Null ) );
         }
         --offset;
         
@@ -503,13 +501,24 @@ namespace {
 
     JSON parse_bool( const string &str, size_t &offset ) {
         JSON Bool;
-        Bool = (str[offset] == 't');
+        if( str.substr( offset, 4 ) == "true" )
+            Bool = true;
+        else if( str.substr( offset, 5 ) == "false" )
+            Bool = false;
+        else {
+            std::cerr << "ERROR: Bool: Expected 'true' or 'false', found '" << str.substr( offset, 5 ) << "'\n";
+            return std::move( JSON::Make( JSON::Class::Null ) );
+        }
         offset += (Bool.ToBool() ? 4 : 5);
         return std::move( Bool );
     }
 
     JSON parse_null( const string &str, size_t &offset ) {
         JSON Null;
+        if( str.substr( offset, 4 ) != "null" ) {
+            std::cerr << "ERROR: Null: Expected 'null', found '" << str.substr( offset, 4 ) << "'\n";
+            return std::move( JSON::Make( JSON::Class::Null ) );
+        }
         offset += 4;
         return std::move( Null );
     }
@@ -528,7 +537,7 @@ namespace {
             default  : if( ( value <= '9' && value >= '0' ) || value == '-' )
                            return std::move( parse_number( str, offset ) );
         }
-        std::cerr << "Error parsing JSON starting with char '" << value << "'\n";
+        std::cerr << "ERROR: Parse: Unknown starting character '" << value << "'\n";
         return JSON();
     }
 }
