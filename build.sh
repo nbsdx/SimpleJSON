@@ -9,6 +9,7 @@ clang++ -std=c++11 -I. ./examples/array_example.cpp -o ./examples/bin/array_exam
 clang++ -std=c++11 -I. ./examples/prim_example.cpp -o ./examples/bin/prim_example
 clang++ -std=c++11 -I. ./examples/init_example.cpp -o ./examples/bin/init_example
 clang++ -std=c++11 -I. ./examples/load_example.cpp -o ./examples/bin/load_example
+clang++ -std=c++11 -I. ./examples/iter_example.cpp -o ./examples/bin/iter_example
 
 # Build Test Tool
 clang++ -std=c++11 -I. ./test/tester.cpp -o ./test/bin/tester

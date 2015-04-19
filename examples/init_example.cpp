@@ -8,7 +8,7 @@ using namespace std;
 
 int main()
 {
-    JSON obj = {
+    JSON obj( {
         "Key", 1,
         "Key3", true,
         "Key4", nullptr,
@@ -16,7 +16,7 @@ int main()
             "Key4", "VALUE",
             "Arr", json::Array( 1, "Str", false )
         }
-    };
+    } );
 
     cout << obj << endl;
 }

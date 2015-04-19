@@ -122,6 +122,18 @@ namespace json {
         /// Convert to a boolean literal iff Type == Class::Boolean
         bool ToBool();
         bool ToBool( bool &OK );
+
+        /**
+            Iterating
+        */
+
+        /// Wraps the internal object representation to access iterators.
+        /// Will return empty range for non-object objects.
+        JSONWrapper ObjectRange();
+
+        /// Wraps the internal array representation to access iterators.
+        /// Will return empty range for non-array objects.
+        JSONWrapper ArrayRange();
     }; // End json::JSON documentation
 } // End json documentation
 

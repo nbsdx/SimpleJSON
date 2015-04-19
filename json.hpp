@@ -5,7 +5,7 @@
 #include <cmath>
 #include <cctype>
 #include <string>
-#include <vector>
+#include <deque>
 #include <map>
 #include <type_traits>
 #include <initializer_list>
@@ -15,7 +15,7 @@
 namespace json {
 
 using std::map;
-using std::vector;
+using std::deque;
 using std::string;
 using std::enable_if;
 using std::initializer_list;
@@ -52,7 +52,7 @@ class JSON
         BackingData( string s ) : String( new string( s ) ){}
         BackingData()           : Int( 0 ){}
 
-        vector<JSON>       *List;
+        deque<JSON>       *List;
         map<string,JSON>   *Map;
         string             *String;
         double              Float;
@@ -69,6 +69,20 @@ class JSON
             Floating,
             Integral,
             Boolean
+        };
+
+        template <typename Container>
+        class JSONWrapper {
+            Container *object;
+
+            public:
+                JSONWrapper( Container *val ) : object( val ) {}
+                JSONWrapper( std::nullptr_t ptr )  : object( nullptr ) {}
+
+                typename Container::iterator begin() { return object ? object->begin() : typename Container::iterator(); }
+                typename Container::iterator end() { return object ? object->end() : typename Container::iterator(); }
+                typename Container::const_iterator begin() const { return object ? object->begin() : typename Container::iterator(); }
+                typename Container::const_iterator end() const { return object ? object->end() : typename Container::iterator(); }
         };
 
         JSON() : Internal(), Type( Class::Null ){}
@@ -103,7 +117,7 @@ class JSON
                 break;
             case Class::Array:
                 Internal.List = 
-                    new vector<JSON>( other.Internal.List->begin(),
+                    new deque<JSON>( other.Internal.List->begin(),
                                       other.Internal.List->end() );
                 break;
             case Class::String:
@@ -125,7 +139,7 @@ class JSON
                 break;
             case Class::Array:
                 Internal.List = 
-                    new vector<JSON>( other.Internal.List->begin(),
+                    new deque<JSON>( other.Internal.List->begin(),
                                       other.Internal.List->end() );
                 break;
             case Class::String:
@@ -244,6 +258,18 @@ class JSON
             return ok ? Internal.Bool : false;
         }
 
+        JSONWrapper<map<string,JSON>> ObjectRange() {
+            if( Type == Class::Object )
+                return JSONWrapper<map<string,JSON>>( Internal.Map );
+            return JSONWrapper<map<string,JSON>>( nullptr );
+        }
+
+        JSONWrapper<deque<JSON>> ArrayRange() {
+            if( Type == Class::Array )
+                return JSONWrapper<deque<JSON>>( Internal.List );
+            return JSONWrapper<deque<JSON>>( nullptr );
+        }
+
         string dump( int depth = 1, string tab = "  ") const {
             string pad = "";
             for( int i = 0; i < depth; ++i, pad += tab );
@@ -304,7 +330,7 @@ class JSON
             switch( type ) {
             case Class::Null:      Internal.Map    = nullptr;                break;
             case Class::Object:    Internal.Map    = new map<string,JSON>(); break;
-            case Class::Array:     Internal.List   = new vector<JSON>();     break;
+            case Class::Array:     Internal.List   = new deque<JSON>();     break;
             case Class::String:    Internal.String = new string();           break;
             case Class::Floating:  Internal.Float  = 0.0;                    break;
             case Class::Integral:  Internal.Int    = 0;                      break;
