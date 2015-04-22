@@ -87,12 +87,27 @@ namespace json {
         /// Accessing an out of bounds index will extend the Array.
         JSON& operator[]( unsigned index );
 
+        /// Same as operator[]
+        JSON& at( string_type | unsigned )
+
+        /// const version of 'at'
+        const JSON& at( string_type | unsigned ) const;
+
         /// Stream operator; calls dump()
         std::ostream& operator<<( std::ostream &, const JSON & );
 
         /**
             Utility Methods
          */
+
+        /// Get the length of an array, or -1
+        int length() const;
+
+        /// Get the size of an Array or Object
+        int size() const; 
+
+        /// Determine if an Object has a key
+        bool hasKey( string_type ) const;
 
         /// Useful for appending to an Array, can take any number of
         /// primitive types using variadic templates

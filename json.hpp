@@ -31,7 +31,6 @@ namespace {
             switch( str[i] ) {
                 case '\"': output += "\\\""; break;
                 case '\\': output += "\\\\"; break;
-                case '/' : output += "\\/";  break;
                 case '\b': output += "\\b";  break;
                 case '\f': output += "\\f";  break;
                 case '\n': output += "\\n";  break;
@@ -52,7 +51,7 @@ class JSON
         BackingData( string s ) : String( new string( s ) ){}
         BackingData()           : Int( 0 ){}
 
-        deque<JSON>       *List;
+        deque<JSON>        *List;
         map<string,JSON>   *Map;
         string             *String;
         double              Float;
@@ -77,12 +76,24 @@ class JSON
 
             public:
                 JSONWrapper( Container *val ) : object( val ) {}
-                JSONWrapper( std::nullptr_t ptr )  : object( nullptr ) {}
+                JSONWrapper( std::nullptr_t )  : object( nullptr ) {}
 
                 typename Container::iterator begin() { return object ? object->begin() : typename Container::iterator(); }
                 typename Container::iterator end() { return object ? object->end() : typename Container::iterator(); }
                 typename Container::const_iterator begin() const { return object ? object->begin() : typename Container::iterator(); }
                 typename Container::const_iterator end() const { return object ? object->end() : typename Container::iterator(); }
+        };
+
+        template <typename Container>
+        class JSONConstWrapper {
+            const Container *object;
+
+            public:
+                JSONConstWrapper( const Container *val ) : object( val ) {}
+                JSONConstWrapper( std::nullptr_t )  : object( nullptr ) {}
+
+                typename Container::const_iterator begin() const { return object ? object->begin() : typename Container::const_iterator(); }
+                typename Container::const_iterator end() const { return object ? object->end() : typename Container::const_iterator(); }
         };
 
         JSON() : Internal(), Type( Class::Null ){}
@@ -169,7 +180,7 @@ class JSON
         }
 
         template <typename T>
-        JSON( T b, typename enable_if<is_same<T,bool>::value>::type* = 0 ) : Internal( b ), Type( Class::Boolean ){};
+        JSON( T b, typename enable_if<is_same<T,bool>::value>::type* = 0 ) : Internal( b ), Type( Class::Boolean ){}
 
         template <typename T>
         JSON( T i, typename enable_if<is_integral<T>::value && !is_same<T,bool>::value>::type* = 0 ) : Internal( (long)i ), Type( Class::Integral ){}
@@ -229,10 +240,48 @@ class JSON
             return Internal.List->operator[]( index );
         }
 
-        Class JSONType() { return Type; }
+        JSON &at( const string &key ) {
+            return operator[]( key );
+        }
+
+        const JSON &at( const string &key ) const {
+            return Internal.Map->at( key );
+        }
+
+        JSON &at( unsigned index ) {
+            return operator[]( index );
+        }
+
+        const JSON &at( unsigned index ) const {
+            return Internal.List->at( index );
+        }
+
+        int length() const {
+            if( Type == Class::Array )
+                return Internal.List->size();
+            else
+                return -1;
+        }
+
+        bool hasKey( const string &key ) const {
+            if( Type == Class::Object )
+                return Internal.Map->find( key ) != Internal.Map->end();
+            return false;
+        }
+
+        int size() const {
+            if( Type == Class::Object )
+                return Internal.Map->size();
+            else if( Type == Class::Array )
+                return Internal.List->size();
+            else
+                return -1;
+        }
+
+        Class JSONType() const { return Type; }
 
         /// Functions for getting primitives from the JSON object.
-        bool IsNull(){ return Type == Class::Null; }
+        bool IsNull() const { return Type == Class::Null; }
 
         string ToString() const { bool b; return std::move( ToString( b ) ); }
         string ToString( bool &ok ) const {
@@ -268,6 +317,19 @@ class JSON
             if( Type == Class::Array )
                 return JSONWrapper<deque<JSON>>( Internal.List );
             return JSONWrapper<deque<JSON>>( nullptr );
+        }
+
+        JSONConstWrapper<map<string,JSON>> ObjectRange() const {
+            if( Type == Class::Object )
+                return JSONConstWrapper<map<string,JSON>>( Internal.Map );
+            return JSONConstWrapper<map<string,JSON>>( nullptr );
+        }
+
+
+        JSONConstWrapper<deque<JSON>> ArrayRange() const { 
+            if( Type == Class::Array )
+                return JSONConstWrapper<deque<JSON>>( Internal.List );
+            return JSONConstWrapper<deque<JSON>>( nullptr );
         }
 
         string dump( int depth = 1, string tab = "  ") const {

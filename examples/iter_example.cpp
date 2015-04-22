@@ -5,6 +5,26 @@
 using json::JSON;
 using namespace std;
 
+void dumpArrayConst( const JSON &array ) {
+    for( auto &j : array.ArrayRange() )
+        std::cout << "Value: " << j << "\n";
+}
+
+void dumpArray( JSON &array ) {
+    for( auto &j : array.ArrayRange() )
+        std::cout << "Value: " << j << "\n";
+}
+
+void dumpObjectConst( const JSON &object ) {
+    for( auto &j : object.ObjectRange() )
+        std::cout << "Object[ " << j.first << " ] = " << j.second << "\n";
+}
+
+void dumpObject( JSON &object ) {
+    for( auto &j : object.ObjectRange() )
+        std::cout << "Object[ " << j.first << " ] = " << j.second << "\n";
+}
+
 int main()
 {
     JSON array = JSON::Make( JSON::Class::Array );
@@ -15,14 +35,16 @@ int main()
     array[2] = "Test2";
     array[3] = "Test3";
 
-    for( auto i : array.ArrayRange() )
-        std::cout << "Value: " << i << "\n";
-
     obj[ "Key0" ] = "Value1";
     obj[ "Key1" ] = array;
     obj[ "Key2" ] = 123;
 
-    for( auto i : obj.ObjectRange() )
-        std::cout << "Key: " << i.first << ", Value: " << i.second << "\n";
 
+    std::cout << "=============== tests ================\n";
+    dumpArray( array );
+    dumpObject( obj );
+
+    std::cout << "============ const tests =============\n";
+    dumpArrayConst( array );
+    dumpObjectConst( obj );
 }
