@@ -98,6 +98,12 @@ class JSON
 
         JSON() : Internal(), Type( Class::Null ){}
 
+        explicit JSON(Class type)
+            : JSON()
+        {
+            SetType( type );
+        }
+
         JSON( initializer_list<JSON> list ) 
             : JSON() 
         {
@@ -194,8 +200,7 @@ class JSON
         JSON( std::nullptr_t ) : Internal(), Type( Class::Null ){}
 
         static JSON Make( Class type ) {
-            JSON ret; ret.SetType( type );
-            return ret;
+            return JSON(type);
         }
 
         static JSON Load( const string & );
@@ -333,13 +338,13 @@ class JSON
         }
 
         string dump( int depth = 1, string tab = "  ") const {
-            string pad = "";
-            for( int i = 0; i < depth; ++i, pad += tab );
-
             switch( Type ) {
                 case Class::Null:
                     return "null";
                 case Class::Object: {
+                    string pad = "";
+                    for( int i = 0; i < depth; ++i, pad += tab );
+
                     string s = "{\n";
                     bool skip = true;
                     for( auto &p : *Internal.Map ) {
@@ -453,7 +458,7 @@ namespace {
             consume_ws( str, ++offset );
             JSON Value = parse_next( str, offset );
             Object[Key.ToString()] = Value;
-            
+
             consume_ws( str, offset );
             if( str[offset] == ',' ) {
                 ++offset; continue;
@@ -473,7 +478,7 @@ namespace {
     JSON parse_array( const string &str, size_t &offset ) {
         JSON Array = JSON::Make( JSON::Class::Array );
         unsigned index = 0;
-        
+
         ++offset;
         consume_ws( str, offset );
         if( str[offset] == ']' ) {
@@ -500,7 +505,6 @@ namespace {
     }
 
     JSON parse_string( const string &str, size_t &offset ) {
-        JSON String;
         string val;
         for( char c = str[++offset]; c != '\"' ; c = str[++offset] ) {
             if( c == '\\' ) {
@@ -533,8 +537,7 @@ namespace {
                 val += c;
         }
         ++offset;
-        String = val;
-        return String;
+        return JSON(val);
     }
 
     JSON parse_number( const string &str, size_t &offset ) {
@@ -575,7 +578,7 @@ namespace {
             return JSON::Make( JSON::Class::Null );
         }
         --offset;
-        
+
         if( isDouble )
             Number = std::stod( val ) * std::pow( 10, exp );
         else {
@@ -602,13 +605,12 @@ namespace {
     }
 
     JSON parse_null( const string &str, size_t &offset ) {
-        JSON Null;
         if( str.substr( offset, 4 ) != "null" ) {
             std::cerr << "ERROR: Null: Expected 'null', found '" << str.substr( offset, 4 ) << "'\n";
             return JSON::Make( JSON::Class::Null );
         }
         offset += 4;
-        return Null;
+        return JSON();
     }
 
     JSON parse_next( const string &str, size_t &offset ) {
