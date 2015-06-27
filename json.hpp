@@ -148,6 +148,8 @@ class JSON
         }
 
         JSON& operator=( const JSON &other ) {
+            if (&other == this) return *this;
+
             switch( other.Type ) {
             case Class::Object:
                 Internal.Map = 
