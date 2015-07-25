@@ -379,7 +379,6 @@ class JSON
                 default:
                     return "";
             }
-            return "";
         }
 
         friend std::ostream& operator<<( std::ostream&, const JSON & );
@@ -450,7 +449,7 @@ namespace {
             ++offset; return Object;
         }
 
-        while( true ) {
+        for (;;) {
             JSON Key = parse_next( str, offset );
             consume_ws( str, offset );
             if( str[offset] != ':' ) {
@@ -487,7 +486,7 @@ namespace {
             ++offset; return Array;
         }
 
-        while( true ) {
+        for (;;) {
             Array[index++] = parse_next( str, offset );
             consume_ws( str, offset );
 
@@ -548,7 +547,7 @@ namespace {
         char c;
         bool isDouble = false;
         long exp = 0;
-        while( true ) {
+        for (;;) {
             c = str[offset++];
             if( (c == '-') || (c >= '0' && c <= '9') )
                 val += c;
@@ -562,7 +561,7 @@ namespace {
         if( c == 'E' || c == 'e' ) {
             c = str[ offset++ ];
             if( c == '-' ){ ++offset; exp_str += '-';}
-            while( true ) {
+            for (;;) {
                 c = str[ offset++ ];
                 if( c >= '0' && c <= '9' )
                     exp_str += c;
