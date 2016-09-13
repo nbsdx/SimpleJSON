@@ -292,7 +292,14 @@ class JSON
         double ToFloat() const { bool b; return ToFloat( b ); }
         double ToFloat( bool &ok ) const {
             ok = (Type == Class::Floating);
-            return ok ? Internal.Float : 0.0;
+            if (ok)
+              return Internal.Float;
+            
+            ok = (Type == Class::Integral);
+            if (ok)
+              return Internal.Int;
+            
+            return 0.0;
         }
 
         long ToInt() const { bool b; return ToInt( b ); }
@@ -372,7 +379,7 @@ class JSON
                 default:
                     return "";
             }
-            return "";
+            //return "";
         }
 
         friend std::ostream& operator<<( std::ostream&, const JSON & );
