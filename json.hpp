@@ -112,6 +112,7 @@ class JSON
         { other.Type = Class::Null; other.Internal.Map = nullptr; }
 
         JSON& operator=( JSON&& other ) {
+            ClearInternal();
             Internal = other.Internal;
             Type = other.Type;
             other.Internal.Map = nullptr;
@@ -142,6 +143,7 @@ class JSON
         }
 
         JSON& operator=( const JSON &other ) {
+            ClearInternal();
             switch( other.Type ) {
             case Class::Object:
                 Internal.Map = 
@@ -382,13 +384,8 @@ class JSON
             if( type == Type )
                 return;
 
-            switch( Type ) {
-            case Class::Object: delete Internal.Map;    break;
-            case Class::Array:  delete Internal.List;   break;
-            case Class::String: delete Internal.String; break;
-            default:;
-            }
-
+            ClearInternal();
+          
             switch( type ) {
             case Class::Null:      Internal.Map    = nullptr;                break;
             case Class::Object:    Internal.Map    = new map<string,JSON>(); break;
@@ -401,6 +398,20 @@ class JSON
 
             Type = type;
         }
+
+    private:
+      /* beware: only call if YOU know that Internal is allocated. No checks performed here. 
+         This function should be called in a constructed JSON just before you are going to 
+        overwrite Internal... 
+      */
+      void ClearInternal() {
+        switch( Type ) {
+          case Class::Object: delete Internal.Map;    break;
+          case Class::Array:  delete Internal.List;   break;
+          case Class::String: delete Internal.String; break;
+          default:;
+        }
+      }
 
     private:
 
