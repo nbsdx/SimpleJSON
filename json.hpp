@@ -40,6 +40,39 @@ namespace {
             }
         return std::move( output );
     }
+string json_unescape(const string &str) {
+	string output;
+	for (unsigned i = 0; i < str.length(); ++i) {
+		char c = str[i];
+		if (c == '\\')
+			switch (str[++i]) {
+			case '\"':				output += '\"';				break;
+			case '\\':				output += '\\';				break;
+			case '/':				output += '/';				break;
+			case 'b':				output += '\b';				break;
+			case 'f':				output += '\f';				break;
+			case 'n':				output += '\n';				break;
+			case 'r':				output += '\r';				break;
+			case 't':				output += '\t';				break;
+			case 'u': {
+				output += "\\u";
+				for (unsigned j = 1; i <= 4; ++i) {
+					c = str[i + j];
+					if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
+						output += c;
+					else {
+						std::cerr << "ERROR: String: Expected hex character in unicode escape, found '" << c << "'\n";
+						return std::move(output);
+					}
+				}
+				i += 4;
+			}				break;
+			default:				output += '\\';				break;
+			}
+		output += str[i];
+	}
+	return std::move(output);
+}
 }
 
 class JSON
@@ -288,7 +321,7 @@ class JSON
         string ToString() const { bool b; return std::move( ToString( b ) ); }
         string ToString( bool &ok ) const {
             ok = (Type == Class::String);
-            return ok ? std::move( json_escape( *Internal.String ) ): string("");
+            return ok ? std::move( json_unescape( *Internal.String ) ): string("");
         }
 
         double ToFloat() const { bool b; return ToFloat( b ); }
