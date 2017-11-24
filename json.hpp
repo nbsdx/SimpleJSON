@@ -321,7 +321,7 @@ class JSON
         string ToString() const { bool b; return std::move( ToString( b ) ); }
         string ToString( bool &ok ) const {
             ok = (Type == Class::String);
-            return ok ? std::move( json_unescape( *Internal.String ) ): string("");
+            return ok ? std::move( string( *Internal.String ) ): string("");
         }
 
         double ToFloat() const { bool b; return ToFloat( b ); }
