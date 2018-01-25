@@ -40,39 +40,6 @@ namespace {
             }
         return std::move( output );
     }
-string json_unescape(const string &str) {
-	string output;
-	for (unsigned i = 0; i < str.length(); ++i) {
-		char c = str[i];
-		if (c == '\\')
-			switch (str[++i]) {
-			case '\"':				output += '\"';				break;
-			case '\\':				output += '\\';				break;
-			case '/':				output += '/';				break;
-			case 'b':				output += '\b';				break;
-			case 'f':				output += '\f';				break;
-			case 'n':				output += '\n';				break;
-			case 'r':				output += '\r';				break;
-			case 't':				output += '\t';				break;
-			case 'u': {
-				output += "\\u";
-				for (unsigned j = 1; i <= 4; ++i) {
-					c = str[i + j];
-					if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
-						output += c;
-					else {
-						std::cerr << "ERROR: String: Expected hex character in unicode escape, found '" << c << "'\n";
-						return std::move(output);
-					}
-				}
-				i += 4;
-			}				break;
-			default:				output += '\\';				break;
-			}
-		output += str[i];
-	}
-	return std::move(output);
-}
 }
 
 class JSON
@@ -99,7 +66,7 @@ class JSON
             Array,
             String,
             Floating,
-            Integral,
+            Integer,
             Boolean
         };
 
@@ -218,7 +185,7 @@ class JSON
         JSON( T b, typename enable_if<is_same<T,bool>::value>::type* = 0 ) : Internal( b ), Type( Class::Boolean ){}
 
         template <typename T>
-        JSON( T i, typename enable_if<is_integral<T>::value && !is_same<T,bool>::value>::type* = 0 ) : Internal( (long)i ), Type( Class::Integral ){}
+        JSON( T i, typename enable_if<is_integral<T>::value && !is_same<T,bool>::value>::type* = 0 ) : Internal( (long)i ), Type( Class::Integer ){}
 
         template <typename T>
         JSON( T f, typename enable_if<is_floating_point<T>::value>::type* = 0 ) : Internal( (double)f ), Type( Class::Floating ){}
@@ -252,7 +219,7 @@ class JSON
 
         template <typename T>
             typename enable_if<is_integral<T>::value && !is_same<T,bool>::value, JSON&>::type operator=( T i ) {
-                SetType( Class::Integral ); Internal.Int = i; return *this;
+                SetType( Class::Integer ); Internal.Int = i; return *this;
             }
 
         template <typename T>
@@ -332,7 +299,7 @@ class JSON
 
         long ToInt() const { bool b; return ToInt( b ); }
         long ToInt( bool &ok ) const {
-            ok = (Type == Class::Integral);
+            ok = (Type == Class::Integer);
             return ok ? Internal.Int : 0;
         }
 
@@ -400,7 +367,7 @@ class JSON
                     return "\"" + json_escape( *Internal.String ) + "\"";
                 case Class::Floating:
                     return std::to_string( Internal.Float );
-                case Class::Integral:
+                case Class::Integer:
                     return std::to_string( Internal.Int );
                 case Class::Boolean:
                     return Internal.Bool ? "true" : "false";
@@ -425,7 +392,7 @@ class JSON
             case Class::Array:     Internal.List   = new deque<JSON>();     break;
             case Class::String:    Internal.String = new string();           break;
             case Class::Floating:  Internal.Float  = 0.0;                    break;
-            case Class::Integral:  Internal.Int    = 0;                      break;
+            case Class::Integer:   Internal.Int    = 0;                      break;
             case Class::Boolean:   Internal.Bool   = false;                  break;
             }
 
