@@ -45,17 +45,17 @@ namespace {
 class JSON
 {
     union BackingData {
-        BackingData( double d ) : Float( d ){}
-        BackingData( long   l ) : Int( l ){}
-        BackingData( bool   b ) : Bool( b ){}
-        BackingData( string s ) : String( new string( s ) ){}
-        BackingData()           : Int( 0 ){}
+        BackingData( double d )     : Float( d ){}
+        BackingData( long long  l ) : Int( l ){}
+        BackingData( bool   b )     : Bool( b ){}
+        BackingData( string s )     : String( new string( s ) ){}
+        BackingData()               : Int( 0 ){}
 
         deque<JSON>        *List;
         map<string,JSON>   *Map;
         string             *String;
         double              Float;
-        long                Int;
+        long long           Int;
         bool                Bool;
     } Internal;
 
@@ -66,7 +66,7 @@ class JSON
             Array,
             String,
             Floating,
-            Integer,
+            Integral,
             Boolean
         };
 
@@ -185,7 +185,7 @@ class JSON
         JSON( T b, typename enable_if<is_same<T,bool>::value>::type* = 0 ) : Internal( b ), Type( Class::Boolean ){}
 
         template <typename T>
-        JSON( T i, typename enable_if<is_integral<T>::value && !is_same<T,bool>::value>::type* = 0 ) : Internal( (long)i ), Type( Class::Integer ){}
+        JSON( T i, typename enable_if<is_integral<T>::value && !is_same<T,bool>::value>::type* = 0 ) : Internal( (long long)i ), Type( Class::Integral ){}
 
         template <typename T>
         JSON( T f, typename enable_if<is_floating_point<T>::value>::type* = 0 ) : Internal( (double)f ), Type( Class::Floating ){}
@@ -219,7 +219,7 @@ class JSON
 
         template <typename T>
             typename enable_if<is_integral<T>::value && !is_same<T,bool>::value, JSON&>::type operator=( T i ) {
-                SetType( Class::Integer ); Internal.Int = i; return *this;
+                SetType( Class::Integral ); Internal.Int = i; return *this;
             }
 
         template <typename T>
@@ -288,7 +288,8 @@ class JSON
         string ToString() const { bool b; return std::move( ToString( b ) ); }
         string ToString( bool &ok ) const {
             ok = (Type == Class::String);
-            return ok ? std::move( string( *Internal.String ) ): string("");
+            return ok ? std::move( string(*Internal.String) ): string("");
+//            return ok ? std::move( json_unescape( *Internal.String ) ): string("");
         }
 
         double ToFloat() const { bool b; return ToFloat( b ); }
@@ -297,9 +298,9 @@ class JSON
             return ok ? Internal.Float : 0.0;
         }
 
-        long ToInt() const { bool b; return ToInt( b ); }
-        long ToInt( bool &ok ) const {
-            ok = (Type == Class::Integer);
+        long long ToInt() const { bool b; return ToInt( b ); }
+        long long ToInt( bool &ok ) const {
+            ok = (Type == Class::Integral);
             return ok ? Internal.Int : 0;
         }
 
@@ -367,7 +368,7 @@ class JSON
                     return "\"" + json_escape( *Internal.String ) + "\"";
                 case Class::Floating:
                     return std::to_string( Internal.Float );
-                case Class::Integer:
+                case Class::Integral:
                     return std::to_string( Internal.Int );
                 case Class::Boolean:
                     return Internal.Bool ? "true" : "false";
@@ -392,7 +393,7 @@ class JSON
             case Class::Array:     Internal.List   = new deque<JSON>();     break;
             case Class::String:    Internal.String = new string();           break;
             case Class::Floating:  Internal.Float  = 0.0;                    break;
-            case Class::Integer:   Internal.Int    = 0;                      break;
+            case Class::Integral:  Internal.Int    = 0;                      break;
             case Class::Boolean:   Internal.Bool   = false;                  break;
             }
 
