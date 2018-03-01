@@ -418,6 +418,7 @@ class JSON
         Class Type = Class::Null;
 };
 
+template<class T>
 JSON Array() {
     return std::move( JSON::Make( JSON::Class::Array ) );
 }
@@ -429,14 +430,15 @@ JSON Array( T... args ) {
     return std::move( arr );
 }
 
-JSON Object() {
-    return std::move( JSON::Make( JSON::Class::Object ) );
+template <typename... T>
+JSON Array() {
+    JSON arr = JSON::Make( JSON::Class::Array );
+    return std::move( arr );
 }
 
-std::ostream& operator<<( std::ostream &os, const JSON &json ) {
-    os << json.dump();
-    return os;
-}
+JSON Object();
+
+std::ostream& operator<<( std::ostream &os, const JSON &json );
 
 namespace {
     JSON parse_next( const string &, size_t & );
@@ -641,9 +643,6 @@ namespace {
     }
 }
 
-JSON JSON::Load( const string &str ) {
-    size_t offset = 0;
-    return std::move( parse_next( str, offset ) );
-}
+
 
 } // End Namespace json
