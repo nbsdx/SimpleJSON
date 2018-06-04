@@ -1,3 +1,64 @@
+# VERSION 2 TESTING NOTES
+
+This Readme is super out of date.
+
+Current status: 
+
+Creating JSON objects from c++ isn't great - it works, but it's really verbose. There are no operator= or init lists to help things be easier.
+
+Working with JSON objects is pretty easy if you just need to access the data in them - this version is MUCH more suited to reading from JSON than it is for creating new JSON documents. It's doable, but it takes a lot of code.
+
+```
+#include "parser.hpp"
+#include "json.hpp"
+
+using namespace nbsdx::util;
+
+/*
+echo '{"foo":[true, false], "bar":null}' | ./example
+==> true
+
+*/
+int main() {
+  JSONParser p(std::cin);
+  JSON j = p.parse();
+
+  std::cout << j["foo"][0].AsBoolean() << "\n";
+}
+
+```
+
+```
+// Create the above JSON
+void foo() {
+  JSON j = JSON::Object();
+  j["foo"] = JSON::Array();
+  j["foo"].EmplaceBack(JSON::Boolean(true));
+  j["foo"].EmplaceBack(JSON::Boolean(false));
+  j["bar"] = JSON::Null();
+}
+```
+## TODO
+
+Add initialization-lists for bulk-cration - 
+
+```
+JSON j({
+  {
+    "foo", {
+      true
+      false
+    }
+  },
+  {
+    "bar", nullptr
+  }
+});
+
+==> { "foo" : [true, false], "bar" : null }
+```
+
+
 # SimpleJSON
 Simple C++ JSON library
 
