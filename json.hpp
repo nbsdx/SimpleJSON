@@ -462,21 +462,21 @@ JSON parse_next(const string &, size_t &);
 
 void consume_ws(const string &str, size_t &offset) {
     while (offset < str.length() && isspace(str[offset]))
-        ++offset;
+        offset++;
 }
 
 JSON parse_object(const string &str, size_t &offset) {
     JSON Object = JSON::Make(JSON::Class::Object);
 
-    ++offset;
+    offset++;
     consume_ws(str, offset);
     if (offset < str.length() && str[offset] == '}') {
-        ++offset;
-        return std::move(Object);
+        offset++;
+        return std::move(Object); // empty object
     }
 
     while (offset < str.length()) {
-        JSON Key = parse_next(str, offset);
+        JSON Key = parse_next(str, offset); // Key
         consume_ws(str, offset);
         if (offset >= str.length()) {
             throw std::runtime_error("json parsing: Expected colon, found EOF");
@@ -484,48 +484,46 @@ JSON parse_object(const string &str, size_t &offset) {
         if (str[offset] != ':') {
             throw std::runtime_error("json parsing: Expected colon, found another");
         }
-        consume_ws(str, ++offset);
-        JSON Value = parse_next(str, offset);
+        offset++;
+        consume_ws(str, offset);
+        JSON Value = parse_next(str, offset); // Vlue
         Object[Key.ToString()] = Value;
-
         consume_ws(str, offset);
         if (offset < str.length() && str[offset] == ',') {
-            ++offset;
+            offset++;
             continue;
         } else if (offset < str.length() && str[offset] == '}') {
-            ++offset;
+            offset++;
             break;
         } else {
             if (offset >= str.length()) {
-                throw std::runtime_error("json parsing: Expected comma, found EOF");
+                throw std::runtime_error("json parsing: Expected comma or '}', found EOF");
             }
-            throw std::runtime_error("json parsing: Expected comma, found another");
+            throw std::runtime_error("json parsing: Expected comma or '}', found another");
         }
     }
-
     return std::move(Object);
 }
 
 JSON parse_array(const string &str, size_t &offset) {
     JSON Array = JSON::Make(JSON::Class::Array);
     unsigned index = 0;
-
-    ++offset;
+    offset++;
     consume_ws(str, offset);
     if (offset < str.length() && str[offset] == ']') {
-        ++offset;
-        return std::move(Array);
+        offset++;
+        return std::move(Array); // empty array
     }
 
     while (offset < str.length()) {
-        Array[index++] = parse_next(str, offset);
+        Array[index] = parse_next(str, offset); // Item
+        index++;
         consume_ws(str, offset);
-
         if (offset < str.length() && str[offset] == ',') {
-            ++offset;
+            offset++;
             continue;
         } else if (offset < str.length() && str[offset] == ']') {
-            ++offset;
+            offset++;
             break;
         } else {
             if (offset >= str.length()) {
@@ -534,7 +532,6 @@ JSON parse_array(const string &str, size_t &offset) {
             throw std::runtime_error("json parsing: Array: Expected ',' or ']', found another");
         }
     }
-
     return std::move(Array);
 }
 
@@ -582,7 +579,7 @@ JSON parse_string(const string &str, size_t &offset) {
             case 'u': {
                 val += "\\u";
                 if ((offset + 4) >= str.length()) {
-                    throw std::runtime_error("json parsing: String: Expected HEX, found EOF");
+                    throw std::runtime_error("json parsing: String: Expected 4 HEX, found EOF");
                 }
                 for (unsigned i = 1; i <= 4; ++i) {
                     c = str[offset + i];
@@ -616,10 +613,23 @@ JSON parse_number(const string &str, size_t &offset) {
     char c;
     bool isDouble = false;
     long exp = 0;
+
+    if (offset < str.length()) {
+        c = str[offset];
+        //        offset++;
+        if (c == '-') {
+            offset++;
+            val += c;
+        }
+    }
+    if (offset >= str.length()) {
+        throw std::runtime_error("json parsing: Number: Expected 0-9, found EOF");
+    }
+
     while (offset < str.length()) {
         c = str[offset];
         offset++;
-        if ((c == '-') || (c >= '0' && c <= '9'))
+        if (c >= '0' && c <= '9')
             val += c;
         else if (c == '.') {
             val += c;
@@ -633,6 +643,9 @@ JSON parse_number(const string &str, size_t &offset) {
         if (c == '-') {
             offset++;
             exp_str += '-';
+        }
+        if (offset >= str.length()) {
+            throw std::runtime_error("json parsing: Number: Expected 0-9, found EOF");
         }
         while (offset < str.length()) {
             c = str[offset];
@@ -654,7 +667,7 @@ JSON parse_number(const string &str, size_t &offset) {
         }
         throw std::runtime_error("json parsing: Number: Expected a number for exponent, found another");
     }
-    --offset;
+    offset--;
 
     if (isDouble)
         Number = std::stod(val) * std::pow(10, exp);
@@ -667,28 +680,40 @@ JSON parse_number(const string &str, size_t &offset) {
     return std::move(Number);
 }
 
-JSON parse_bool(const string &str, size_t &offset) {
+JSON parse_false(const string &str, size_t &offset) {
     JSON Bool;
-    if (str.substr(offset, 4) == "true")
-        Bool = true;
-    else if (str.substr(offset, 5) == "false")
+    if ((offset + 5) > str.length()) {
+        throw std::runtime_error("json parsing: Bool: Expected 'false', found EOF");
+    }
+    if (str.substr(offset, 5) == "false")
         Bool = false;
     else {
-        if (offset >= str.length()) {
-            throw std::runtime_error("json parsing: Bool: Expected 'true' or 'false', found EOF");
-        }
-        throw std::runtime_error("json parsing: Bool: Expected 'true' or 'false', found another");
+        throw std::runtime_error("json parsing: Bool: Expected 'false', found another");
     }
-    offset += (Bool.ToBool() ? 4 : 5);
+    offset += 5;
+    return std::move(Bool);
+}
+
+JSON parse_true(const string &str, size_t &offset) {
+    JSON Bool;
+    if ((offset + 4) >= str.length()) {
+        throw std::runtime_error("json parsing: Bool: Expected 'true', found EOF");
+    }
+    if (str.substr(offset, 4) == "true")
+        Bool = true;
+    else {
+        throw std::runtime_error("json parsing: Bool: Expected 'true', found another");
+    }
+    offset += 4;
     return std::move(Bool);
 }
 
 JSON parse_null(const string &str, size_t &offset) {
     JSON Null;
+    if ((offset + 4) > str.length()) {
+        throw std::runtime_error("json parsing: Null: Expected 'null', found EOF");
+    }
     if (str.substr(offset, 4) != "null") {
-        if (offset >= str.length()) {
-            throw std::runtime_error("json parsing: Null: Expected 'null', found EOF");
-        }
         throw std::runtime_error("json parsing: Null: Expected 'null', found another");
     }
     offset += 4;
@@ -700,8 +725,7 @@ JSON parse_next(const string &str, size_t &offset) {
     if (offset >= str.length()) {
         throw std::runtime_error("json parsing: JSON: Expected JSON, found EOF");
     }
-    char value;
-    value = str[offset];
+    char value = str[offset];
     switch (value) {
     case '[':
         return std::move(parse_array(str, offset));
@@ -710,8 +734,9 @@ JSON parse_next(const string &str, size_t &offset) {
     case '\"':
         return std::move(parse_string(str, offset));
     case 't':
+        return std::move(parse_true(str, offset));
     case 'f':
-        return std::move(parse_bool(str, offset));
+        return std::move(parse_false(str, offset));
     case 'n':
         return std::move(parse_null(str, offset));
     default:
