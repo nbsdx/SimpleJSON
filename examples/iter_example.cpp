@@ -1,5 +1,5 @@
 
-#include "json.hpp"
+#include "../json.hpp"
 #include <iostream>
 
 using json::JSON;
